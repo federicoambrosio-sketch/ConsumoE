@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Evaluación de Consumo Energético</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    section {
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+    }
+
+    button {
+      background: #1e40af;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      font-size: 15px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .result {
+      background: #f9fafb;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+
+    .ok {
+      margin-top: 15px;
+      color: green;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Evaluación de Consumo Energético</h1>
+
+<section>
+  <label>Superficie cubierta (m²)</label>
+  <input type="number" id="superficie">
+
+  <label>Provincia</label>
+  <select id="provincia">
+    <option value="">Seleccione</option>
+    <option>Buenos Aires</option>
+    <option>CABA</option>
+    <option>Catamarca</option>
+    <option>Chaco</option>
+    <option>Chubut</option>
+    <option>Córdoba</option>
+    <option>Corrientes</option>
+    <option>Entre Ríos</option>
+    <option>Formosa</option>
+    <option>Jujuy</option>
+    <option>La Pampa</option>
+    <option>La Rioja</option>
+    <option>Mendoza</option>
+    <option>Misiones</option>
+    <option>Neuquén</option>
+    <option>Río Negro</option>
+    <option>Salta</option>
+    <option>San Juan</option>
+    <option>San Luis</option>
+    <option>Santa Cruz</option>
+    <option>Santa Fe</option>
+    <option>Santiago del Estero</option>
+    <option>Tierra del Fuego</option>
+    <option>Tucumán</option>
+  </select>
+</section>
+
+<section>
+  <h3>Electricidad (kWh)</h3>
+  <div class="grid">
+    <input class="elec">
+    <input class="elec">
+    <input class="elec">
+    <input class="elec">
+    <input class="elec">
+    <input class="elec">
+  </div>
+</section>
+
+<section>
+  <h3>Gas</h3>
+
+  <label>Tipo de combustible</label>
+  <select id="tipoGas" onchange="actualizarPCI()">
+    <option value="GN">Gas Natural</option>
+    <option value="GLP">GLP</option>
+  </select>
+
+  <label>PCI</label>
+  <input id="pci" disabled>
+
+  <div class="grid">
+    <input class="gas">
+    <input class="gas">
+    <input class="gas">
+    <input class="gas">
+    <input class="gas">
+    <input class="gas">
+  </div>
+</section>
+
+<button onclick="calcularYEnviar()">Calcular y enviar</button>
+
+<div id="mensaje" class="ok"></div>
+
+<section id="resultados" style="display:none;">
+  <div class="result">
+    Energía útil eléctrica: <span id="euElec"></span> kWh<br>
+    Energía útil gas: <span id="euGas"></span> kWh
+  </div>
+  <div class="result">
+    Energía primaria eléctrica: <span id="epElec"></span> kWh<br>
+    Energía primaria gas: <span id="epGas"></span> kWh<br>
+    <strong>Total: <span id="epTotal"></span> kWh</strong>
+  </div>
+</section>
+
+</div>
+
+<script>
+const AIRTABLE_TOKEN = "patlTKlw3GHQAamRv.773e349593b52fa33d5bf9eae84225775aeb616b5c4279349ec77001739be69b";
+const BASE_ID = "appqwbaDrt41q3TcS";
+const TABLE_NAME = "Registros";
+
+function actualizarPCI() {
+  document.getElementById("pci").value =
+    document.getElementById("tipoGas").value === "GN"
+      ? "9,5 kWh/m³"
+      : "12,8 kWh/kg";
+}
+actualizarPCI();
+
+function sumar(clase) {
+  let t = 0;
+  document.querySelectorAll("." + clase).forEach(i => t += Number(i.value || 0));
+  return t;
+}
+
+function calcularYEnviar() {
+  const elec = sumar("elec");
+  const gasVol = sumar("gas");
+  const tipo = document.getElementById("tipoGas").value;
+  const pci = tipo === "GN" ? 9.5 : 12.8;
+
+  const gasUti
