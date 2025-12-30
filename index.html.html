@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Evaluación de Consumo Energético</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      padding: 20px;
+    }
+    .container {
+      max-width: 960px;
+      margin: auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    input, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    button {
+      background: #1d4ed8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      margin-top: 20px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    section {
+      margin-top: 30px;
+    }
+    .card {
+      background: #f1f5f9;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .highlight {
+      font-size: 22px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Evaluación de Consumo Energético</h1>
+
+  <!-- DATOS DE LA VIVIENDA -->
+  <section>
+    <label>Superficie cubierta (m²)</label>
+    <input type="number" id="superficie" min="0">
+
+    <label>Provincia</label>
+    <input type="text" id="provincia">
+  </section>
+
+  <!-- ELECTRICIDAD -->
+  <section>
+    <h2>Consumo eléctrico (kWh)</h2>
+    <div class="grid">
+      <script>
+        for (let i = 1; i <= 6; i++) {
+          document.write(`
+            <div>
+              <label>Periodo ${i}</label>
+              <input type="number" id="elec_${i}" min="0">
+            </div>
+          `);
+        }
+      </script>
+    </div>
+  </section>
+
+  <!-- GAS NATURAL -->
+  <section>
+    <h2>Consumo de gas natural</h2>
+
+    <label>Combustible</label>
+    <input type="text" value="Gas Natural" disabled>
+
+    <label>PCI (kWh/m³)</label>
+    <input type="text" id="pci" value="9.3" disabled>
+
+    <div class="grid">
+      <script>
+        for (let i = 1; i <= 6; i++) {
+          document.write(`
+            <div>
+              <label>Periodo ${i}</label>
+              <input type="number" id="gas_${i}" min="0">
+            </div>
+          `);
+        }
+      </script>
+    </div>
+  </section>
+
+  <button onclick="procesar()">Enviar y calcular</button>
+
+  <!-- VISUALIZACIONES -->
+  <section id="visualizaciones" style="display:none">
+    <canvas id="graficoUtil"></canvas>
+    <canvas id="graficoPrimaria"></canvas>
+    <canvas id="graficoTorta"></canvas>
+
+    <div class="card">
+      <div>Energía primaria total anual</div>
+      <div class="highlight"><span id="ep_total"></span> kWh</div>
+    </div>
+
+    <div class="card">
+      <div>Indicador energético</div>
+      <div class="highlight"><span id="indicador"></span> kWh/m²·año</div>
+    </div>
+  </section>
+</div>
+
+<script>
+const TOKEN = "TU_TOKEN";
+const BASE_ID = "TU_BASE";
+const TABLA = "Registros";
+
+const FACTOR_ELEC = 3.3;
+const FACTOR_GAS = 1.25;
+
+function procesar() {
+  const superficie = Number(superficie.value);
+  const provincia = provincia.value;
+
+  const elec = [];
+  const gas_m3 = [];
+
+  for (let i = 1; i <= 6; i++) {
+    elec.push(Number(document.getElementById(`elec_${i}`).value || 0));
+    gas_m3.push(Number(document.getElementById(`gas_${i}`).value || 0));
+  }
+
+  const pci = 9.3;
+  const gas_kwh = gas_m3.map(v => v * pci);
+
+  const euElecTotal = elec.reduce((a,b)=>a+b,0);
+  const euGasTotal  = gas_kwh.reduce((a,b)=>a+b,0);
+
+  const epElecTotal = euElecTotal * FACTOR_ELEC;
+  const epGasTotal  = euGasTotal * FACTOR_GAS;
+  const epTotal = epElecTotal + epGasTotal;
+
+  const indicador = epTotal / superficie;
+
+  document.getElementById("ep_total").textContent = epTotal.toFixed(0);
+  document.getElementById("indicador").textContent = indicador.toFixed(1);
+  document.getElementById("visualizaciones").style.display = "block";
+}
+</script>
+
+</body>
+</html>
