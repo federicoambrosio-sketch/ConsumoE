@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Evaluación de Consumo Energético</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      padding: 20px;
+    }
+    .container {
+      max-width: 960px;
+      margin: auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    h1, h2 {
+      margin-top: 0;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    button {
+      background: #1d4ed8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      margin-top: 20px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #1e40af;
+    }
+    section {
+      margin-top: 30px;
+    }
+    .card {
+      background: #f1f5f9;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .highlight {
+      font-size: 22px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Evaluación de Consumo Energético</h1>
+
+  <!-- DATOS DE LA VIVIENDA -->
+  <section>
+    <h2>Datos de la vivienda</h2>
+
+    <label>Superficie cubierta (m²)</label>
+    <input type="number" id="superficie" min="0">
+
+    <label>Provincia</label>
+    <select id="provincia">
+      <option value="">Seleccionar provincia</option>
+      <option>Buenos Aires</option>
+      <option>CABA</option>
+      <option>Catamarca</option>
+      <option>Chaco</option>
+      <option>Chubut</option>
+      <option>Córdoba</option>
+      <option>Corrientes</option>
+      <option>Entre Ríos</option>
+      <option>Formosa</option>
+      <option>Jujuy</option>
+      <option>La Pampa</option>
+      <option>La Rioja</option>
+      <option>Mendoza</option>
+      <option>Misiones</option>
+      <option>Neuquén</option>
+      <option>Río Negro</option>
+      <option>Salta</option>
+      <option>San Juan</option>
+      <option>San Luis</option>
+      <option>Santa Cruz</option>
+      <option>Santa Fe</option>
+      <option>Santiago del Estero</option>
+      <option>Tierra del Fuego</option>
+      <option>Tucumán</option>
+    </select>
+  </section>
+
+  <!-- ELECTRICIDAD -->
+  <section>
+    <h2>Consumo eléctrico (kWh)</h2>
+    <div class="grid">
+      <script>
+        for (let i = 1; i <= 6; i++) {
+          document.write(`
+            <div>
+              <label>Periodo ${i}</label>
+              <input type="number" id="elec_${i}" min="0">
+            </div>
+          `);
+        }
+      </script>
+    </div>
+  </section>
+
+  <!-- GAS -->
+  <section>
+    <h2>Consumo de gas</h2>
+
+    <label>Tipo de combustible</label>
+    <select id="tipo_gas" onchange="actualizarPCI()">
+      <option value="Gas Natural">Gas Natural</option>
+      
+    </select>
+
+    <label>PCI (kWh/m³)</label>
+    <input type="text" id="pci" value="9.3" disabled>
+
+    <div class="grid">
+      <script>
+        for (let i = 1; i <= 6; i++) {
+          document.write(`
+            <div>
+              <label>Periodo ${i}</label>
+              <input type="number" id="gas_${i}" min="0">
+            </div>
+          `);
+        }
+      </script>
+    </div>
+  </section>
+
+  <button onclick="procesar()">Enviar y calcular</button>
+
+  <!-- VISUALIZACIONES -->
+  <section id="visualizaciones" style="display:none">
+    <h2>Energía útil por bimestre</h2>
+    <canvas id="graficoUtil"></canvas>
+
+    <h2>Energía primaria por bimestre</h2>
+    <canvas id="graficoPrimaria"></canvas>
+
+    <h2>Distribución de energía primaria</h2>
+    <canvas id="graficoTorta"></canvas>
+
+    <div class="card">
+      <div>Energía primaria total anual</div>
+      <div class="highlight"><span id="ep_total"></span> kWh</div>
+    </div>
+
+    <div class="card">
+      <div>Indicador energético</div>
+      <div class="highlight"><span id="indicador"></span> kWh/m²·año</div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ===== CONFIGURACIÓN AIRTABLE ===== */
+const TOKEN = "patlTKlw3GHQAamRv.773e349593b52fa33d5bf9eae84225775aeb616b5c4279349ec77001739be69b";
+const BASE_ID = "appqwbaDrt41q3TcS";
+const TABLA = "Registros";
+
+/* ===== FACTORES ===== */
+const FACTOR_ELEC = 3.3;
+const FACTOR_GAS = 1.25;
+
+/* ===== FUNCIONES ===== */
+function actualizarPCI() {
+  const tipo = document.getElementById("tipo_gas").value;
+  document.getElementById("pci").value = tipo === "GLP" ? "12.8" : "9.3";
+}
+
+function procesar() {
+  const superficie = Number(document.getElementById("superficie").value);
+  const provincia = document.getElementById("provincia").value;
+
+  if (!superficie || !provincia) {
+    alert("Completar superficie y provincia");
+    return;
+  }
+
+  const elec = [];
+  const gas_m3 = [];
+
+  for (let i = 1; i <= 6; i++) {
+    elec.push(Number(document.getElementById(`elec_${i}`).value || 0));
+    gas_m3.push(Number(document.getElementById(`gas_${i}`).value || 0));
+  }
+
+  const pci = Number(document.getElementById("pci").value);
+  const gas_kwh = gas_m3.map(v => v * pci);
+
+  const elecPrim = elec.map(v => v * FACTOR_ELEC);
+  const gasPrim = gas_kwh.map(v => v * FACTOR_GAS);
+const euElecTotal = elec.reduce((a, b) => a + b, 0);
+const euGasTotal  = gas_kwh.reduce((a, b) => a + b, 0);
+
+
+  const elecPrimTotal = elecPrim.reduce((a,b)=>a+b,0);
+  const gasPrimTotal = gasPrim.reduce((a,b)=>a+b,0);
+  const epTotal = elecPrimTotal + gasPrimTotal;
+  const indicador = epTotal / superficie;
+
+  /* ===== GRÁFICOS ===== */
+  document.getElementById("ep_total").textContent = epTotal.toFixed(0);
+  document.getElementById("indicador").textContent = indicador.toFixed(1);
+
+  new Chart(graficoUtil, {
+    type: "bar",
+    data: {
+      labels: ["P1","P2","P3","P4","P5","P6"],
+      datasets: [
+        { label: "Electricidad (kWh)", data: elec },
+        { label: "Gas (kWh)", data: gas_kwh }
+      ]
+    }
+  });
+
+  new Chart(graficoPrimaria, {
+    type: "bar",
+    data: {
+      labels: ["P1","P2","P3","P4","P5","P6"],
+      datasets: [
+        { label: "Electricidad primaria", data: elecPrim },
+        { label: "Gas primaria", data: gasPrim }
+      ]
+    }
+  });
+
+  new Chart(graficoTorta, {
+    type: "pie",
+    data: {
+      labels: ["Electricidad", "Gas"],
+      datasets: [{
+        data: [elecPrimTotal, gasPrimTotal]
+      }]
+    }
+  });
+
+  document.getElementById("visualizaciones").style.display = "block";
+
+  /* ===== ENVÍO A AIRTABLE ===== */
+  const fields = {
+  superficie: Number(superficie),
+  provincia,
+  tipo_gas: document.getElementById("tipo_gas").value,
+
+  eu_elec: Number(euElecTotal),
+  eu_gas: Number(euGasTotal),
+
+  ep_elec: Number(elecPrimTotal),
+  ep_gas: Number(gasPrimTotal),
+
+  ep_total: Number(epTotal),
+  indicador: Number(indicador)
+};
+
+
+  for (let i = 1; i <= 6; i++) {
+    fields[`elec_${i}`] = elec[i-1];
+    fields[`gas_${i}`] = gas_m3[i-1];
+  }
+
+ fetch(`https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLA)}`, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${TOKEN}`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ fields })
+})
+.then(res => res.json())
+.then(data => {
+  console.log("Airtable OK:", data);
+  alert("Datos guardados correctamente");
+})
+.catch(err => {
+  console.error("Error Airtable:", err);
+  alert("Error al guardar en Airtable");
+});
+
+}
+</script>
+
+</body>
+</html>
