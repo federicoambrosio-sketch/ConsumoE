@@ -157,15 +157,7 @@
 
   <!-- VISUALIZACIONES -->
   <section id="visualizaciones" style="display:none">
-    <h2>Energía útil por bimestre</h2>
-    <canvas id="graficoUtil"></canvas>
-
-    <h2>Energía primaria por bimestre</h2>
-    <canvas id="graficoPrimaria"></canvas>
-
-    <h2>Distribución de energía primaria</h2>
-    <canvas id="graficoTorta"></canvas>
-
+   
     <div class="card">
       <div>Energía primaria total anual</div>
       <div class="highlight"><span id="ep_total"></span> kWh</div>
@@ -175,6 +167,17 @@
       <div>Indicador energético</div>
       <div class="highlight"><span id="indicador"></span> kWh/m²·año</div>
     </div>
+    
+    <h2>Energía útil por bimestre</h2>
+    <canvas id="graficoUtil"></canvas>
+
+    <h2>Energía primaria por bimestre</h2>
+    <canvas id="graficoPrimaria"></canvas>
+
+    <h2>Distribución de energía primaria</h2>
+    <canvas id="graficoTorta"></canvas>
+
+    
   </section>
 </div>
 
@@ -308,3 +311,4 @@ const euGasTotal  = gas_kwh.reduce((a, b) => a + b, 0);
 
 </body>
 </html>
+
