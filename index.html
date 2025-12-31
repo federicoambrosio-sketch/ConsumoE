@@ -157,16 +157,15 @@
 
   <!-- VISUALIZACIONES -->
   <section id="visualizaciones" style="display:none">
-   
-    <div class="card">
-      <div>Energía primaria total anual</div>
-      <div class="highlight"><span id="ep_total"></span> kWh</div>
-    </div>
-
-    <div class="card">
+    
+   <div class="card">
       <div>Indicador energético</div>
       <div class="highlight"><span id="indicador"></span> kWh/m²·año</div>
     </div>
+    <div class="card">
+      <div>Energía primaria total anual</div>
+      <div class="highlight"><span id="ep_total"></span> kWh</div>
+    </div>    
     
     <h2>Energía útil por bimestre</h2>
     <canvas id="graficoUtil"></canvas>
@@ -229,9 +228,7 @@ const euGasTotal  = gas_kwh.reduce((a, b) => a + b, 0);
   const indicador = epTotal / superficie;
 
   /* ===== GRÁFICOS ===== */
-  document.getElementById("ep_total").textContent = epTotal.toFixed(0);
-  document.getElementById("indicador").textContent = indicador.toFixed(1);
-
+  
   new Chart(graficoUtil, {
     type: "bar",
     data: {
@@ -263,7 +260,8 @@ const euGasTotal  = gas_kwh.reduce((a, b) => a + b, 0);
       }]
     }
   });
-
+  document.getElementById("ep_total").textContent = epTotal.toFixed(0);
+  document.getElementById("indicador").textContent = indicador.toFixed(1);
   document.getElementById("visualizaciones").style.display = "block";
 
   /* ===== ENVÍO A AIRTABLE ===== */
@@ -311,4 +309,5 @@ const euGasTotal  = gas_kwh.reduce((a, b) => a + b, 0);
 
 </body>
 </html>
+
 
